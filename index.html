@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Teste Rastreamento por QR</title>
+
+<script src="https://unpkg.com/html5-qrcode"></script>
+
+<style>
+body {
+  font-family: Arial, sans-serif;
+  padding: 20px;
+  background: #f4f6f9;
+}
+
+h1 {
+  margin-bottom: 10px;
+}
+
+button {
+  padding: 10px 15px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+th, td {
+  padding: 10px;
+  border: 1px solid #ddd;
+  text-align: center;
+}
+
+th {
+  background: #2c3e50;
+  color: white;
+}
+
+.lida {
+  background-color: #d1fae5 !important;
+}
+
+#reader {
+  margin-top: 15px;
+  width: 320px;
+}
+</style>
+</head>
+<body>
+
+<h1>Teste de Leitura de QR Code - Caixas</h1>
+
+<button onclick="iniciarLeitor()">Iniciar Leitor</button>
+<p>Caixas lidas: <strong id="contador">0</strong></p>
+
+<div id="reader"></div>
+
+<br><br>
+
+<table>
+  <thead>
+    <tr>
+      <th>Selecionar</th>
+      <th>Código da Caixa</th>
+      <th>Produto</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody id="tabela">
+  </tbody>
+</table>
+
+<script>
+const caixas = [
+  { codigo: "CX001", produto: "Polpa de Morango", status: "Disponível" },
+  { codigo: "CX002", produto: "Polpa de Manga", status: "Disponível" },
+  { codigo: "CX003", produto: "Polpa de Abacaxi", status: "Disponível" },
+  { codigo: "CX004", produto: "Polpa de Goiaba", status: "Disponível" },
+  { codigo: "CX005", produto: "Polpa de Acerola", status: "Disponível" },
+  { codigo: "CX006", produto: "Polpa de Maracujá", status: "Disponível" },
+  { codigo: "CX007", produto: "Polpa de Caju", status: "Disponível" },
+  { codigo: "CX008", produto: "Polpa de Uva", status: "Disponível" },
+  { codigo: "CX009", produto: "Polpa de Cupuaçu", status: "Disponível" },
+  { codigo: "CX010", produto: "Polpa de Graviola", status: "Disponível" }
+];
+
+const caixasLidas = new Set();
+let leitorAtivo = false;
+
+function carregarTabela() {
+  const tbody = document.getElementById("tabela");
+
+  caixas.forEach(caixa => {
+    const tr = document.createElement("tr");
+    tr.setAttribute("data-codigo", caixa.codigo);
+
+    tr.innerHTML = `
+      <td><input type="checkbox" id="check-${caixa.codigo}"></td>
+      <td>${caixa.codigo}</td>
+      <td>${caixa.produto}</td>
+      <td>${caixa.status}</td>
+    `;
+
+    tbody.appendChild(tr);
+  });
+}
+
+function iniciarLeitor() {
+  if (leitorAtivo) return;
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  html5QrCode.start(
+    { facingMode: "environment" },
+    { fps: 10, qrbox: 250 },
+    (decodedText) => {
+      marcarCaixa(decodedText.trim());
+    }
+  );
+
+  leitorAtivo = true;
+}
+
+function marcarCaixa(codigo) {
+
+  if (caixasLidas.has(codigo)) {
+    console.log("Já lida:", codigo);
+    return;
+  }
+
+  const checkbox = document.getElementById("check-" + codigo);
+  const linha = document.querySelector(`tr[data-codigo='${codigo}']`);
+
+  if (checkbox) {
+    checkbox.checked = true;
+    linha.classList.add("lida");
+
+    caixasLidas.add(codigo);
+    document.getElementById("contador").textContent = caixasLidas.size;
+
+    new Audio("https://actions.google.com/sounds/v1/cartoon/wood_plank_flicks.ogg").play();
+  } else {
+    alert("Caixa não encontrada: " + codigo);
+  }
+}
+
+carregarTabela();
+</script>
+
+</body>
+</html>
