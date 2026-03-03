@@ -43,7 +43,10 @@ th { background:#2c3e50; color:white; }
 </table>
 
 <script>
+
+// 🔹 INCLUI CX210 PARA TESTAR SUA ETIQUETA
 const caixas = [
+  { codigo: "CX210", produto: "Produto da Caixa 210" },
   { codigo: "CX001", produto: "Polpa de Morango" },
   { codigo: "CX002", produto: "Polpa de Manga" },
   { codigo: "CX003", produto: "Polpa de Abacaxi" },
@@ -67,7 +70,9 @@ function carregarTabela() {
 }
 
 async function iniciarCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }});
+  const stream = await navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: "environment" }
+  });
   document.getElementById("video").srcObject = stream;
 }
 
@@ -88,13 +93,24 @@ async function capturar() {
 
   console.log("OCR BRUTO:", text);
 
-  const match = text.toUpperCase().match(/CX\d{3}/);
+  const texto = text.toUpperCase();
+
+  // 🔹 AGORA ACEITA CX: 210, CX 210, CX210, CX-210
+  const match = texto.match(/CX\s*[:\-]?\s*\d+/);
 
   if (match) {
-    marcar(match[0]);
-    document.getElementById("resultado").innerText = match[0];
+
+      let codigo = match[0]
+          .replace(/\s/g, "")   // remove espaços
+          .replace(":", "")     // remove :
+          .replace("-", "");    // remove -
+
+      document.getElementById("resultado").innerText = codigo;
+
+      marcar(codigo);
+
   } else {
-    document.getElementById("resultado").innerText = "Código não encontrado";
+      document.getElementById("resultado").innerText = "Código não encontrado";
   }
 }
 
@@ -110,10 +126,13 @@ function marcar(codigo) {
     linha.classList.add("lida");
     lidas.add(codigo);
     document.getElementById("contador").innerText = lidas.size;
+  } else {
+    console.log("Código não está na tabela:", codigo);
   }
 }
 
 carregarTabela();
+
 </script>
 
 </body>
