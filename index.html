@@ -118,6 +118,7 @@ function iniciarLeitor() {
     { facingMode: "environment" },
     { fps: 10, qrbox: 250 },
     (decodedText) => {
+        console.log("QR LIDO:", JSON.stringify(decodedText));
       marcarCaixa(decodedText.trim());
     }
   );
