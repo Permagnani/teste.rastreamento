@@ -97,7 +97,10 @@ function iniciarLeitor() {
         },
         (decodedText) => {
 
-          const codigo = decodedText.trim().toUpperCase();
+          const codigo = decodedText
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "");
 
           document.getElementById("resultado").innerText = codigo;
 
