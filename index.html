@@ -2,14 +2,14 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Teste OCR - Leitura de Código</title>
+<title>Leitura por QR Code</title>
 
-<script src="https://cdn.jsdelivr.net/npm/tesseract.js@4/dist/tesseract.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <style>
 body { font-family: Arial; padding:20px; background:#f4f6f9; }
 button { padding:10px 15px; margin:10px 0; }
-video, canvas { width:320px; border:1px solid #ccc; }
+#reader { width:320px; margin-top:10px; }
 table { width:100%; border-collapse:collapse; margin-top:20px; background:white; }
 th, td { padding:10px; border:1px solid #ddd; text-align:center; }
 th { background:#2c3e50; color:white; }
@@ -18,17 +18,13 @@ th { background:#2c3e50; color:white; }
 </head>
 <body>
 
-<h2>Teste OCR - Leitura de Código Impresso</h2>
+<h2>Leitura de Caixas por QR Code</h2>
 
-<button onclick="iniciarCamera()">Iniciar Câmera</button>
-<button onclick="capturar()">Capturar e Ler</button>
+<button onclick="iniciarLeitor()">Iniciar Câmera</button>
 
-<br><br>
+<div id="reader"></div>
 
-<video id="video" autoplay></video>
-<canvas id="canvas" style="display:none;"></canvas>
-
-<p><strong>Resultado OCR:</strong> <span id="resultado">-</span></p>
+<p><strong>Último QR lido:</strong> <span id="resultado">-</span></p>
 <p><strong>Caixas lidas:</strong> <span id="contador">0</span></p>
 
 <table>
@@ -44,7 +40,7 @@ th { background:#2c3e50; color:white; }
 
 <script>
 
-// 🔹 INCLUI CX210 PARA TESTAR SUA ETIQUETA
+// 🔹 LISTA DE CAIXAS
 const caixas = [
   { codigo: "CX210", produto: "Produto da Caixa 210" },
   { codigo: "CX001", produto: "Polpa de Morango" },
@@ -69,51 +65,6 @@ function carregarTabela() {
   });
 }
 
-async function iniciarCamera() {
-  const stream = await navigator.mediaDevices.getUserMedia({ 
-      video: { facingMode: "environment" }
-  });
-  document.getElementById("video").srcObject = stream;
-}
-
-async function capturar() {
-
-  const video = document.getElementById("video");
-  const canvas = document.getElementById("canvas");
-  const ctx = canvas.getContext("2d");
-
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
-
-  ctx.drawImage(video, 0, 0);
-
-  document.getElementById("resultado").innerText = "Lendo...";
-
-  const { data: { text } } = await Tesseract.recognize(canvas, 'eng');
-
-  console.log("OCR BRUTO:", text);
-
-  const texto = text.toUpperCase();
-
-  // 🔹 AGORA ACEITA CX: 210, CX 210, CX210, CX-210
-  const match = texto.match(/CX\s*[:\-]?\s*\d+/);
-
-  if (match) {
-
-      let codigo = match[0]
-          .replace(/\s/g, "")   // remove espaços
-          .replace(":", "")     // remove :
-          .replace("-", "");    // remove -
-
-      document.getElementById("resultado").innerText = codigo;
-
-      marcar(codigo);
-
-  } else {
-      document.getElementById("resultado").innerText = "Código não encontrado";
-  }
-}
-
 function marcar(codigo) {
 
   if (lidas.has(codigo)) return;
@@ -126,9 +77,42 @@ function marcar(codigo) {
     linha.classList.add("lida");
     lidas.add(codigo);
     document.getElementById("contador").innerText = lidas.size;
-  } else {
-    console.log("Código não está na tabela:", codigo);
   }
+}
+
+// 🔹 INICIAR LEITOR QR
+function iniciarLeitor() {
+
+  const html5QrCode = new Html5Qrcode("reader");
+
+  Html5Qrcode.getCameras().then(devices => {
+
+    if (devices.length) {
+
+      html5QrCode.start(
+        devices[0].id,
+        {
+          fps: 10,
+          qrbox: 250
+        },
+        (decodedText) => {
+
+          const codigo = decodedText.trim().toUpperCase();
+
+          document.getElementById("resultado").innerText = codigo;
+
+          marcar(codigo);
+
+        },
+        (errorMessage) => {
+          // Ignora falhas temporárias de leitura
+        }
+      );
+
+    }
+  }).catch(err => {
+    alert("Erro ao acessar câmera");
+  });
 }
 
 carregarTabela();
