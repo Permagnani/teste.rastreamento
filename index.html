@@ -53,6 +53,8 @@ const lidas = new Set();
 
 function carregarTabela() {
   const tbody = document.getElementById("tabela");
+  tbody.innerHTML = "";
+
   caixas.forEach(c => {
     const tr = document.createElement("tr");
     tr.setAttribute("data-codigo", c.codigo);
@@ -78,44 +80,39 @@ function marcar(codigo) {
     lidas.add(codigo);
     document.getElementById("contador").innerText = lidas.size;
   }
+
 }
 
-// 🔹 INICIAR LEITOR QR
+// 🔹 INICIAR LEITOR QR (FORÇA CÂMERA TRASEIRA)
 function iniciarLeitor() {
 
   const html5QrCode = new Html5Qrcode("reader");
 
-  Html5Qrcode.getCameras().then(devices => {
+  html5QrCode.start(
+    { facingMode: "environment" }, // câmera traseira
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    (decodedText) => {
 
-    if (devices.length) {
+      const codigo = decodedText
+        .trim()
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, "");
 
-      html5QrCode.start(
-        devices[0].id,
-        {
-          fps: 10,
-          qrbox: 250
-        },
-        (decodedText) => {
+      document.getElementById("resultado").innerText = codigo;
 
-          const codigo = decodedText
-          .trim()
-          .toUpperCase()
-          .replace(/[^A-Z0-9]/g, "");
+      marcar(codigo);
 
-          document.getElementById("resultado").innerText = codigo;
-
-          marcar(codigo);
-
-        },
-        (errorMessage) => {
-          // Ignora falhas temporárias de leitura
-        }
-      );
-
+    },
+    (errorMessage) => {
+      // ignora erros temporários
     }
-  }).catch(err => {
+  ).catch(err => {
     alert("Erro ao acessar câmera");
   });
+
 }
 
 carregarTabela();
