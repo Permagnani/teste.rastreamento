@@ -50,7 +50,9 @@ const caixas = [
 ];
 
 const lidas = new Set();
+let html5QrCode = null;
 
+// 🔹 CARREGA TABELA
 function carregarTabela() {
   const tbody = document.getElementById("tabela");
   tbody.innerHTML = "";
@@ -67,6 +69,7 @@ function carregarTabela() {
   });
 }
 
+// 🔹 MARCAR CAIXA
 function marcar(codigo) {
 
   if (lidas.has(codigo)) return;
@@ -80,36 +83,60 @@ function marcar(codigo) {
     lidas.add(codigo);
     document.getElementById("contador").innerText = lidas.size;
   }
-
 }
 
-// 🔹 INICIAR LEITOR QR (FORÇA CÂMERA TRASEIRA)
+// 🔹 INICIAR LEITOR QR (DETECÇÃO REAL DA TRASEIRA)
 function iniciarLeitor() {
 
-  const html5QrCode = new Html5Qrcode("reader");
+  if (html5QrCode) {
+    html5QrCode.stop().catch(() => {});
+  }
 
-  html5QrCode.start(
-    { facingMode: "environment" }, // câmera traseira
-    {
-      fps: 10,
-      qrbox: 250
-    },
-    (decodedText) => {
+  html5QrCode = new Html5Qrcode("reader");
 
-      const codigo = decodedText
-        .trim()
-        .toUpperCase()
-        .replace(/[^A-Z0-9]/g, "");
+  Html5Qrcode.getCameras().then(devices => {
 
-      document.getElementById("resultado").innerText = codigo;
-
-      marcar(codigo);
-
-    },
-    (errorMessage) => {
-      // ignora erros temporários
+    if (!devices || devices.length === 0) {
+      alert("Nenhuma câmera encontrada");
+      return;
     }
-  ).catch(err => {
+
+    // 🔎 Procura câmera traseira pelo nome
+    let cameraTraseira = devices.find(device =>
+      device.label.toLowerCase().includes("back") ||
+      device.label.toLowerCase().includes("rear") ||
+      device.label.toLowerCase().includes("environment")
+    );
+
+    // 🔄 Fallback: usa última da lista (geralmente traseira)
+    if (!cameraTraseira) {
+      cameraTraseira = devices[devices.length - 1];
+    }
+
+    html5QrCode.start(
+      cameraTraseira.id,
+      {
+        fps: 10,
+        qrbox: 250
+      },
+      (decodedText) => {
+
+        const codigo = decodedText
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z0-9]/g, "");
+
+        document.getElementById("resultado").innerText = codigo;
+
+        marcar(codigo);
+
+      },
+      (errorMessage) => {
+        // ignora erros temporários
+      }
+    );
+
+  }).catch(err => {
     alert("Erro ao acessar câmera");
   });
 
